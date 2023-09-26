@@ -5,7 +5,11 @@ class Command(ABC):
         pass
 
     @abstractmethod
-    def execution(self, inputStr, user_path, *args):
+    def execution(self, inputStr, user_path, flags: {}, *args):
+        pass
+
+    @abstractmethod
+    def describe(self):
         pass
 
 
@@ -20,6 +24,11 @@ class pwd(Command):
         if "L" in arguments or "l" in arguments:
             outputExecutin = outputExecutin.split('/')[-1]
         return outputExecutin
+
+    def describe(self):
+        for flag in self.flags:
+            print(f"Param ({flag}): {self.flags[flag]}")
+
 
 
 class ls(Command):
@@ -54,6 +63,9 @@ class ls(Command):
                 if len(destPath):
                     outputExecutin += '\n'
         return outputExecutin
+    def describe(self):
+        for flag in self.flags:
+            print(f"Param ({flag}): {self.flags[flag]}")
 
 
 class cd(Command):
@@ -70,38 +82,46 @@ class cd(Command):
         flmgObj = args[1]
         arguments = args[0]
         listOfSubCt = flmgObj.namelist()
-
         if not (len(inputStr)):
             raise Exception
         if inputStr == "/":
             return '/'
+        #tod: recode
         if inputStr[0] != '/':
-            print(inputStr, user_path)
-            inputStr = user_path  + '/' + inputStr
-        if inputStr[0] == "/":
-            for subct in listOfSubCt:
-                if(inputStr[1:] in subct):
-                    return inputStr
+            if user_path == '/':
+                inputStr = user_path + inputStr
+            else:
+                inputStr = user_path + '/' + inputStr
+        for subct in listOfSubCt:
+            if (subct.startswith(inputStr[1:])):
+                return inputStr
 
 
         #todo: make as exception
         raise Exception("No such catalog")
 
+    def describe(self):
+        for flag in self.flags:
+            print(f"Param ({flag}): {self.flags[flag]}")
 
 class cat(Command):
     def __init__(self):
         super().__init__()
-        self.flags = {"b": "",
-                      "e": "",
-                      "n": ""}
+        self.flags = {"b": "Number the non-blank output lines, starting at 1",
+                      "e": "Squeeze multiple adjacent empty lines, causing the output to be single spaced.",
+                      "n": "Number the output lines, starting at 1"}
 
-    def execution(self, inputStr, user_path, *args):
-        flmgObj = args[1]
-        arguments = args[0]
+    def execution(self, inputStr, user_path, flags: {}, *args):
+        flmgObj = args[0]
+
         if (user_path[-1] != '/'):
             user_path += '/'
         try:
             with flmgObj.open(user_path[1:] + inputStr) as file:
-                return file.read().decode("utf-8")
+                return file.read().decode('utf-8')
         except Exception as ec:
             print("No such file to read")
+
+    def describe(self):
+        for flag in self.flags:
+            print(f"Param ({flag}): {self.flags[flag]}")
