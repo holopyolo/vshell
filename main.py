@@ -57,7 +57,6 @@ class Vshell:
         for argument in flags:
             # -1: considering one symbol respectively
             if len(argument) - 1:
-                print({*argument})
                 flags = flags.union({*argument})
                 flags.remove(argument)
         return flags
