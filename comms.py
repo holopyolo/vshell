@@ -36,34 +36,52 @@ class pwd(Command):
 class ls(Command):
     def __init__(self):
         super().__init__()
-        self.flags = {"C": "",
-                      "x": "",
-                      "a": "",
-                      "R": "OUTPUT RECURSIVE FILES FROM CATALOGS"}
-
+        self.flags = {"c": (self.sortOut, "SORTED OUTPUT"),
+                      "a": (self.filerCatalogs, "ONLY FILES, NOT CATALOGS"),
+                      "r": (None, "OUTPUT RECURSIVE FILES FROM CATALOGS")}
+        self.annot = []
     # refactor
+    def filerCatalogs(self, string):
+        return '\n'.join(re.findall("\w+.\w+", string))
+
+    def sortOut(self, string):
+        listOfWords = string.split('\n')
+        if not(len(listOfWords)):
+            raise "Empty output"
+        listOfWords.sort()
+        return '\n'.join(listOfWords)
     def findLastWords(self, string, pattern):
-        if pattern[-1] == '/':
-            pattern = pattern[:-1]
-        if (pattern[0] == '/'):
-            pattern = pattern[1:]
         dvdString = string.split('/')
         dvdPattern = pattern.split('/')
+
+        for word in dvdPattern:
+            if word == "":
+                dvdPattern.remove(word)
+
         if len(dvdPattern) < len(dvdString):
-            return dvdString[len(dvdPattern)]
+            if pattern == "/":
+                return dvdString[len(dvdPattern) - 1]
+            else:
+                return dvdString[len(dvdPattern)]
         return ""
 
-    def execution(self, inputStr, userPath, *args):
-        flmgObj = args[1]
-        arguments = args[0]
+    def execution(self, inputStr, userPath, Userflags: {}, *args):
+        flmgObj = args[0]
         outputExecutin = ""
         allFiles = flmgObj.namelist()
+
+        is_seen = set()
         for dirToFile in allFiles:
             if dirToFile.startswith(userPath[1:]):
                 destPath = self.findLastWords(dirToFile, userPath)
-                outputExecutin += destPath
-                if len(destPath):
+                if destPath not in is_seen and len(destPath):
+                    outputExecutin += destPath
+                    is_seen.add(destPath)
                     outputExecutin += '\n'
+
+        for param in Userflags:
+            outputExecutin = self.flags[param][0](outputExecutin)
+
         return outputExecutin
     def describe(self):
         for flag in self.flags:
